@@ -27,3 +27,5 @@ def import_data(url):
 
     return data_lines
 
+import_data(url)
+
