@@ -1,84 +1,80 @@
 import requests
-import os
 import pandas as pd
+import os
 from io import StringIO
 
-def import_data(url):
+def import_data(url, team_member_id="M3"):
     """
-    Downloads the dataset from the provided URL and saves it as 'dataset_M3.txt'.
+    Downloads the dataset from the given URL and saves it as 'dataset_M3.txt'.
 
     Parameters:
         url (str): The URL of the dataset.
+        team_member_id (str): Identifier for team member (default "M3").
 
     Returns:
-        list: A list of strings, each representing a row of the dataset.
+        pd.DataFrame: The raw dataset loaded into a Pandas DataFrame.
     """
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an error for bad responses
-
-        # Ensure 'data' folder exists
-        os.makedirs("data", exist_ok=True)
-
-        # Save the dataset
-        file_path = "data/dataset_M3.txt"
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(response.text)
-
-        return response.text.splitlines()
-
+        response = requests.get(url, timeout=10)  # Add timeout for robustness
+        response.raise_for_status()  # Raise an exception for HTTP errors
     except requests.exceptions.RequestException as e:
-        print(f"Error downloading data: {e}")
-        return []
+        raise Exception(f"Failed to download data: {e}")
+    
+    # Ensure the 'data' folder exists
+    os.makedirs("data", exist_ok=True)
+    
+    # Save dataset as a .txt file
+    file_path = os.path.join("data", f"dataset_{team_member_id}.txt")
+    with open(file_path, "w", encoding="utf-8") as file:
+        file.write(response.text)
+    
+    # Load dataset into a Pandas DataFrame
+    df = pd.read_csv(StringIO(response.text))  # Read directly from response
+    return df
 
-def clean_data(data_text_list):
+def clean_data(df, team_member_id="M3"):
     """
-    Cleans the dataset by converting date formats to 'DD-MM-YYYY HH:MM:SS'.
+    Cleans the dataset by converting the 'time' column to 'DD-MM-YYYY HH:MM:SS' format.
 
     Parameters:
-        data_text_list (list): A list of strings representing the raw dataset.
+        df (pd.DataFrame): The raw dataset.
+        team_member_id (str): Identifier for team member (default "M3").
 
     Returns:
-        list: A list of cleaned strings.
+        pd.DataFrame: The cleaned dataset.
     """
-    try:
-        if not data_text_list:
-            print("No data available for cleaning.")
-            return []
-
-        # Convert list of strings to DataFrame
-        data_str = "\n".join(data_text_list)
-        df = pd.read_csv(StringIO(data_str))
-
-        # Standardize the date format
-        if "time" in df.columns:
-            df["time"] = pd.to_datetime(df["time"], errors="coerce").dt.strftime("%d-%m-%Y %H:%M:%S")
-
-        # Ensure 'output' folder exists
-        os.makedirs("output", exist_ok=True)
-
-        # Save cleaned data
-        output_file = "output/cleaned_data_M3.txt"
-        df.to_csv(output_file, index=False)
-
-        return df.to_csv(index=False).splitlines()
-
-    except Exception as e:
-        print(f"Error processing data: {e}")
-        return []
+    # Check if the 'time' column exists
+    if 'time' in df.columns:
+        # Convert time format
+        df['time'] = pd.to_datetime(df['time'], errors="coerce").dt.strftime('%d-%m-%Y %H:%M:%S')
+    else:
+        raise ValueError("The 'time' column is missing from the dataset.")
+    
+    # Ensure the 'output' folder exists
+    os.makedirs("output", exist_ok=True)
+    
+    # Save cleaned data as a .txt file (tab-separated for clarity)
+    output_path = os.path.join("output", f"cleaned_data_{team_member_id}.txt")
+    df.to_csv(output_path, index=False, sep="\t")  # Use tab separator for better readability
+    
+    return df
 
 if __name__ == "__main__":
-    # Dataset URL
+    # Define dataset URL
     dataset_url = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2023-01-01&endtime=2023-01-02"
+    
+    # Import dataset
+    df_raw = import_data(dataset_url, team_member_id="M3")
+    print("Original Data (First 5 Rows):")
+    print(df_raw.head())  # Display first 5 rows of raw data
 
-    # Step 1: Download raw dataset
-    raw_data = import_data(dataset_url)
+    # Clean dataset
+    df_cleaned = clean_data(df_raw, team_member_id="M3")
+    
+    # Display cleaned data neatly
+    print("Cleaned Data (First 10 Rows):")
+    print(df_cleaned.head(10).to_string(index=False))  # Print first 10 rows
 
-    # Step 2: Clean dataset and save
-    cleaned_data = clean_data(raw_data)
-
-    # Print confirmation
-    if cleaned_data:
-        print("Data cleaning completed successfully!")
-    else:
-        print("Data cleaning failed.")
+    # Show dataset structure
+    print("Dataset Summary:")
+    print(df_cleaned.info())
