@@ -2,7 +2,6 @@ import requests
 import os
 import pandas as pd
 from io import StringIO
-from datetime import datetime
 
 def import_data(url):
     """
@@ -16,9 +15,9 @@ def import_data(url):
     """
     try:
         response = requests.get(url)
-        response.raise_for_status()  # Raise an error for bad responses (e.g., 404, 500)
+        response.raise_for_status()  # Raise an error for bad responses
 
-        # Ensure the 'data' directory exists
+        # Ensure 'data' folder exists
         os.makedirs("data", exist_ok=True)
 
         # Save the dataset
@@ -51,13 +50,11 @@ def clean_data(data_text_list):
         data_str = "\n".join(data_text_list)
         df = pd.read_csv(StringIO(data_str))
 
-        # Check if the 'time' column exists and convert format
+        # Standardize the date format
         if "time" in df.columns:
             df["time"] = pd.to_datetime(df["time"], errors="coerce").dt.strftime("%d-%m-%Y %H:%M:%S")
-        else:
-            print("Warning: 'time' column not found in the dataset.")
 
-        # Ensure the 'output' directory exists
+        # Ensure 'output' folder exists
         os.makedirs("output", exist_ok=True)
 
         # Save cleaned data
@@ -74,8 +71,10 @@ if __name__ == "__main__":
     # Dataset URL
     dataset_url = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2023-01-01&endtime=2023-01-02"
 
-    # Execute functions
+    # Step 1: Download raw dataset
     raw_data = import_data(dataset_url)
+
+    # Step 2: Clean dataset and save
     cleaned_data = clean_data(raw_data)
 
     # Print confirmation
