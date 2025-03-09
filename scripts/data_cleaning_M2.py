@@ -4,7 +4,7 @@ import os
 from io import StringIO
 
 def import_data(url, team_member_id="M2"):
-    """Downloads data from the given URL and saves it as dataset_M2.txt."""
+    
     try:
         response = requests.get(url, timeout=10)  # Add a timeout for robustness
         response.raise_for_status()  # Raise an exception for HTTP errors
@@ -24,7 +24,7 @@ def import_data(url, team_member_id="M2"):
     return df
 
 def clean_data(df, team_member_id="M2"):
-    """Cleans the dataset by formatting the 'time' column and saves it as cleaned_data_M2.txt."""
+    
     # Check if the 'time' column exists
     if 'time' in df.columns:
         # Convert the 'time' column to the desired format
