@@ -42,7 +42,7 @@ def clean_data(df, team_member_id="M2"):
     return df
 
 
-url = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2023-01-02&endtime=2023-01-03"
+url = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv&starttime=2023-01-02&endtime=2023-01-02"
 df = import_data(url, team_member_id="M2")
 print("Original Data:")
 print(df.head())
